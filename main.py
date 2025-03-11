@@ -2,7 +2,14 @@ from crewai import Agent, Task, Crew, LLM
 
 
 # Initialize the language model
-llm = OpenAI(temperature=0.7)
+llm = LLM(
+    model_name="ollama/qwen2.5:14b",
+    max_tokens=100,
+    temperature=0.7,
+    top_p=0.9,
+    frequency_penalty=0.0,
+    presence_penalty=0.0
+)
 
 # Define the agents for each stage of the thought processing workflow
 capture_agent = Agent(
