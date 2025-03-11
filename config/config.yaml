@@ -1,40 +1,46 @@
-# config/agents.yaml
+# config/config.yaml
 agents:
   capture:
     role: "Thought Capture Specialist"
     goal: "Efficiently capture raw thoughts with minimal friction"
     backstory: "You excel at preserving raw ideas exactly as they occur, without judgment or alteration. Your strength is in creating a frictionless capture process."
     verbose: true
+    prompt_template: "You are acting as the Capture agent. Please acknowledge that you have received and read the following text: '{thought_content}'. Your response should simply state that you've read it as the Capture agent."
 
   contextualize:
     role: "Context Analyst"
     goal: "Add essential metadata to raw thoughts without altering their content"
     backstory: "You have a talent for quickly identifying the domain, urgency, and relationships of thoughts without changing their original form."
     verbose: true
+    prompt_template: "You are acting as the Contextualize agent. Please acknowledge that you have received and read the following text: '{thought_content}'. Your response should simply state that you've read it as the Contextualize agent."
 
   clarify:
     role: "Thought Clarifier"
     goal: "Expand and develop raw thoughts into more complete forms"
     backstory: "You excel at making thoughts more coherent while preserving their essence, expanding abbreviations and identifying core concepts."
     verbose: true
+    prompt_template: "You are acting as the Clarify agent. Please acknowledge that you have received and read the following text: '{thought_content}'. Your response should simply state that you've read it as the Clarify agent."
 
   categorize:
     role: "Pattern Recognition Specialist"
     goal: "Connect thoughts to existing knowledge frameworks and identify patterns"
     backstory: "You have an exceptional ability to see how new ideas fit into existing knowledge structures and can identify emerging themes."
     verbose: true
+    prompt_template: "You are acting as the Categorize agent. Please acknowledge that you have received and read the following text: '{thought_content}'. Your response should simply state that you've read it as the Categorize agent."
 
   crystallize:
     role: "Thought Crystallizer"
     goal: "Transform processed thoughts into their most useful and actionable forms"
     backstory: "You are skilled at distilling ideas to their essential components and structuring them optimally for their intended application."
     verbose: true
+    prompt_template: "You are acting as the Crystallize agent. Please acknowledge that you have received and read the following text: '{thought_content}'. Your response should simply state that you've read it as the Crystallize agent."
 
   connect:
     role: "Knowledge Integrator"
     goal: "Integrate processed thoughts into broader knowledge systems"
     backstory: "You excel at establishing meaningful connections between ideas and ensuring they influence broader work and thinking."
     verbose: true
+    prompt_template: "You are acting as the Connect agent. Please acknowledge that you have received and read the following text: '{thought_content}'. Your response should simply state that you've read it as the Connect agent."
 
 tasks:
   capture:
@@ -69,7 +75,7 @@ tasks:
 
 llm:
   model_name: "ollama/qwen2.5:14b"
-  max_tokens: 100
+  max_tokens: 10000
   temperature: 0.7
   top_p: 0.9
   frequency_penalty: 0.0

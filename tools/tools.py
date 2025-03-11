@@ -1,9 +1,15 @@
 import os
 import json
 import time
+import logging
 from datetime import datetime
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from langchain_community.llms import Ollama
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 class CaptureHandler(FileSystemEventHandler):
     def __init__(self, callback):
@@ -19,6 +25,39 @@ class CaptureHandler(FileSystemEventHandler):
         content = read_file(event.src_path)
         if content:
             self.callback(content)
+
+def process_existing_files(folder_path, callback):
+    """
+    Process existing files in the folder.
+    
+    Args:
+        folder_path (str): Path to the folder to process
+        callback (function): Function to call for each file
+        
+    Returns:
+        int: Number of files processed
+    """
+    if not os.path.exists(folder_path):
+        return 0
+        
+    count = 0
+    print(f"Checking for existing files in {folder_path}...")
+    
+    for filename in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, filename)
+        
+        # Skip directories and metadata files
+        if os.path.isdir(file_path) or filename.startswith("meta_") or filename.startswith("."):
+            continue
+            
+        # Process the file
+        print(f"Found existing file: {file_path}")
+        content = read_file(file_path)
+        if content:
+            callback(content)
+            count += 1
+            
+    return count
 
 def watch_folder(folder_path, callback):
     """
@@ -72,18 +111,45 @@ def read_file(file_path):
     print(f"Read file: {file_name}")
     return thought_object
 
-def process_with_agent(thought_object, agent, agent_name):
+def communicate_with_llm(prompt, model_name="qwen2.5:14b", temperature=0.7, max_tokens=2000):
     """
-    Process a thought object with an agent.
+    Communicate with the LLM and get a response.
     
     Args:
-        thought_object (dict): The thought object to process
-        agent: The agent to process the thought object
-        agent_name (str): The name of the agent (for logging)
+        prompt (str): The prompt to send to the LLM.
+        model_name (str): The name of the model to use.
+        temperature (float): The temperature setting for generation.
+        max_tokens (int): The maximum number of tokens to generate.
         
     Returns:
-        dict: The processed thought object
+        str: The response from the LLM.
     """
+    print("========= COMMUNICATE WITH LLM FUNCTION CALLED =========")
+    print(f"Using model: {model_name}")
+    print(f"Prompt first 100 chars: {prompt[:100]}...")
+    
+    try:
+        # Create the LLM instance
+        llm = Ollama(
+            model=model_name,
+            temperature=temperature,
+            base_url="http://localhost:11434"
+        )
+        
+        # Get response from LLM
+        print("Sending prompt to LLM...")
+        response = llm.invoke(prompt)
+        
+        print(f"Received response from LLM, length: {len(response)}")
+        return response
+    except Exception as e:
+        print(f"LLM ERROR: {type(e).__name__}: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        return f"ERROR: Failed to communicate with LLM: {str(e)}"
+
+def process_with_agent(thought_object, agent, agent_name, agent_id, prompt_templates):
+    """Process a thought object with an agent."""
     # Record the current stage in history
     thought_object["processing_history"].append({
         "stage": thought_object["processing_stage"],
@@ -93,27 +159,71 @@ def process_with_agent(thought_object, agent, agent_name):
     # Update the current processing stage
     thought_object["processing_stage"] = agent_name.lower()
     
-    # Here you would typically use the agent to process the thought
-    # For now, we'll just add a placeholder
-    thought_object[f"{agent_name.lower()}_results"] = f"Processed by {agent_name}"
+    # Print the keys to check for case sensitivity or other issues
+    print(f"All available template keys: {list(prompt_templates.keys())}")
+    print(f"Agent ID: {agent_id}, Present in templates: {agent_id in prompt_templates}")
+    
+    if agent_id in prompt_templates:
+        # Fill in the template with the thought content
+        template = prompt_templates[agent_id]
+        print(f"Template found for {agent_id}, length: {len(template)}")
+        
+        # Check for correct placeholder
+        if "{thought_content}" in template:
+            prompt = template.replace("{thought_content}", thought_object["content"])
+        else:
+            print(f"WARNING: Template doesn't contain {{thought_content}} placeholder. Using direct replacement.")
+            prompt = template.replace("{{content}}", thought_object["content"])
+        
+        # Send the prompt to the LLM and get the response
+        print(f"Sending thought to LLM with {agent_name} agent...")
+        llm_response = communicate_with_llm(prompt)
+        
+        # Store the LLM response in the thought object
+        thought_object[f"{agent_name.lower()}_results"] = llm_response
+    else:
+        # Try with lowercase version of the agent_id
+        lowercase_id = agent_id.lower()
+        if lowercase_id in prompt_templates:
+            print(f"Found template using lowercase agent ID: {lowercase_id}")
+            template = prompt_templates[lowercase_id]
+            
+            # Fill in the template with the thought content
+            if "{thought_content}" in template:
+                prompt = template.replace("{thought_content}", thought_object["content"])
+            else:
+                prompt = template.replace("{{content}}", thought_object["content"])
+            
+            # Send the prompt to the LLM and get the response
+            print(f"Sending thought to LLM with {agent_name} agent...")
+            llm_response = communicate_with_llm(prompt)
+            
+            # Store the LLM response in the thought object
+            thought_object[f"{agent_name.lower()}_results"] = llm_response
+        else:
+            # Fallback if no prompt template is defined
+            print(f"No prompt template found for {agent_id} or {lowercase_id}, skipping LLM call")
+            thought_object[f"{agent_name.lower()}_results"] = f"Processed by {agent_name} (no LLM interaction)"
     
     print(f"Processed thought with {agent_name} agent")
     return thought_object
 
-def pass_to_next_agent(thought_object, next_agent, next_agent_name):
+def pass_to_next_agent(thought_object, next_agent, next_agent_name, next_agent_id, prompt_templates):
     """
     Pass a thought object to the next agent.
     
     Args:
         thought_object (dict): The thought object to pass
         next_agent: The next agent to process the thought object
-        next_agent_name (str): The name of the next agent (for logging)
+        next_agent_name (str): The name of the next agent (for display)
+        next_agent_id (str): The ID of the next agent (for looking up the prompt template)
+        prompt_templates (dict): Dictionary of prompt templates
         
     Returns:
         dict: The thought object (for chaining)
     """
     print(f"Passing thought to {next_agent_name} agent")
-    return process_with_agent(thought_object, next_agent, next_agent_name)
+    return process_with_agent(thought_object, next_agent, next_agent_name, next_agent_id, prompt_templates)
 
 def write_result(thought_object, output_folder):
     """
