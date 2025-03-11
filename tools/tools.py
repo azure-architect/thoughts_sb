@@ -2,8 +2,8 @@ import os
 import json
 import time
 from datetime import datetime
-from watchdog import Observer
-from watchdog import FileSystemEventHandler
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 class CaptureHandler(FileSystemEventHandler):
     def __init__(self, callback):
