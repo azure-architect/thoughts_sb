@@ -1,4 +1,5 @@
 from crewai import Agent, Task, Crew, LLM
+from tools.tools import process_thought
 
 
 # Initialize the language model
@@ -103,10 +104,7 @@ thought_processing_crew = Crew(
     verbose=2
 )
 
-# Function to process a new thought
-def process_thought(raw_thought):
-    result = thought_processing_crew.kickoff(inputs={"raw_thought": raw_thought})
-    return result
+
 
 # Example usage
 if __name__ == "__main__":
