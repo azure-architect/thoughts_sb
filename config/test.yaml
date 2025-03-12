@@ -74,8 +74,18 @@ tasks:
     dependencies: ["crystallize"]
 
 llm:
-  model_name: "ollama/qwen2.5:14b"
-  temperature: 0.7
+  default:
+    provider: "ollama"
+    model_name: "qwen2.5:14b"
+    temperature: 0.7
+  
+  # Optional alternative configurations for specific tasks
+  large_context:
+    provider: "gemini"
+    model_name: "gemini-1.5-pro"
+    temperature: 0.5
+    api_key: "AIzaSyDbVmhXnuxhucA-ORbLiTCTo4mzqFlK0h4"  # Replace with your actual API key or use env variables
+  
   
   
   

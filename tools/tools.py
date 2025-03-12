@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from langchain_community.llms import Ollama
+import litellm  # Changed from langchain_community.llms import Ollama
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -111,37 +111,62 @@ def read_file(file_path):
     print(f"Read file: {file_name}")
     return thought_object
 
-def communicate_with_llm(prompt, model_name="qwen2.5:14b", temperature=0.7):
+def communicate_with_llm(prompt, model_name="qwen2.5:14b", provider="ollama", temperature=0.7, api_key=None):
     """
     Communicate with the LLM and get a response.
     
     Args:
         prompt (str): The prompt to send to the LLM.
         model_name (str): The name of the model to use.
+        provider (str): The provider to use ("ollama", "gemini", "openai", etc.)
         temperature (float): The temperature setting for generation.
-        max_tokens (int): The maximum number of tokens to generate.
+        api_key (str): API key for external providers (not needed for Ollama)
         
     Returns:
         str: The response from the LLM.
     """
     print("========= COMMUNICATE WITH LLM FUNCTION CALLED =========")
-    print(f"Using model: {model_name}")
+    print(f"Using provider: {provider}, model: {model_name}")
     print(f"Prompt first 100 chars: {prompt[:100]}...")
     
     try:
-        # Create the LLM instance
-        llm = Ollama(
-            model=model_name,
-            temperature=temperature,
-            base_url="http://localhost:11434"
-        )
+        # Configure model based on provider
+        if provider.lower() == "ollama":
+            # Ollama is local, use the direct model name format
+            full_model_name = f"ollama/{model_name}"
+            litellm.ollama_api_base = "http://localhost:11434"
+        elif provider.lower() == "gemini":
+            # For Gemini, use the gemini model format
+            full_model_name = f"gemini/{model_name}"
+            # Set API key if provided
+            if api_key:
+                os.environ["GEMINI_API_KEY"] = api_key
+        elif provider.lower() == "openai":
+            # For OpenAI, use the openai model format
+            full_model_name = f"openai/{model_name}"
+            # Set API key if provided
+            if api_key:
+                os.environ["OPENAI_API_KEY"] = api_key
+        else:
+            # Default fallback to Ollama
+            print(f"Unknown provider '{provider}', falling back to Ollama")
+            full_model_name = f"ollama/{model_name}"
+            litellm.ollama_api_base = "http://localhost:11434"
+        
+        print(f"Using model: {full_model_name}")
         
         # Get response from LLM
-        print("Sending prompt to LLM...")
-        response = llm.invoke(prompt)
+        response = litellm.completion(
+            model=full_model_name,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=temperature
+        )
         
-        print(f"Received response from LLM, length: {len(response)}")
-        return response
+        # Extract the actual response text
+        response_text = response.choices[0].message.content
+        
+        print(f"Received response from LLM, length: {len(response_text)}")
+        return response_text
     except Exception as e:
         print(f"LLM ERROR: {type(e).__name__}: {str(e)}")
         import traceback
