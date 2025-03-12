@@ -27,5 +27,7 @@ def create_adapter_from_config(config: Dict[str, Any]) -> LLMAdapter:
     
     # Initialize the adapter with the config
     adapter.initialize(config)
-    
     return adapter
+
+# Create an alias for backward compatibility
+create_adapter = create_adapter_from_config
