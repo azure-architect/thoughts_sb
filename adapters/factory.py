@@ -1,22 +1,28 @@
-# adapters/factory.py
-from typing import Dict, Any
 from .base_adapter import LLMAdapter
 from .litellm_adapter import LiteLLMAdapter
 from .ollama_adapter import OllamaAdapter
 
-def create_adapter_from_config(config: Dict[str, Any]) -> LLMAdapter:
-    """Create an adapter from a configuration dictionary.
+
+
+
+
+
+
+def create_adapter_from_config(config):
+    """Create an adapter from a configuration dictionary or adapter type string.
     
     Args:
-        config: Configuration dictionary with adapter type, model, and parameters
+        config: Either a configuration dictionary or a string with the adapter type
         
     Returns:
         An instance of the appropriate LLMAdapter
-        
-    Raises:
-        ValueError: If the adapter type is not supported
     """
-    adapter_type = config.get("adapter", "").lower()
+    # Handle case where config is just a string (adapter type)
+    if isinstance(config, str):
+        adapter_type = config.lower()
+        config = {"adapter": adapter_type}  # Create minimal config dict
+    else:
+        adapter_type = config.get("adapter", "").lower()
     
     if adapter_type == "ollama":
         adapter = OllamaAdapter()

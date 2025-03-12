@@ -1,50 +1,50 @@
-# config/llm_configs.yaml
-ollama_llama3_gradient:
-  adapter: "ollama"
-  model: "llama3-gradient:1048k"
-  temperature: 0.7
-  max_tokens: 4096
-  context_window: 1000000  # 1 million tokens
-  
-ollama_mistral_nemo:
-  adapter: "ollama"
-  model: "mistral-nemo"
-  temperature: 0.7
-  max_tokens: 4096
-  context_window: 128000  # 128K tokens
-  
-ollama_llama3:
-  adapter: "ollama"
-  model: "llama3:8b-instruct-fp16"
-  temperature: 0.7
-  max_tokens: 1024
-  context_window: 4096
-  
-ollama_mistral:
-  adapter: "ollama"
-  model: "mistral-nemo:latest"
-  temperature: 0.7
-  max_tokens: 1024
-  context_window: 8192
-  
-ollama_qwen:
-  adapter: "ollama"
-  model: "qwen2.5:14b"
-  temperature: 0.7
-  max_tokens: 2048
-  context_window: 12288
-  
-google_gemini:
-  adapter: "litellm"  # Using LiteLLM adapter for Google
-  model: "gemini-1.5-pro"
-  temperature: 0.5
-  max_tokens: 8192
-  api_key: "${GEMINI_API_KEY}"
-  context_window: 2000000  # 2 million tokens
-  
-default:
-  adapter: "ollama"
-  model: "llama3-gradient:1048k"
-  temperature: 0.7
-  max_tokens: 4096
-  context_window: 1000000
+llm_configs:
+  ollama_llama3_gradient:
+    adapter: "ollama"
+    model: "llama3-gradient:1048k"
+    temperature: 0.7
+    max_tokens: 4096
+    context_window: 1000000  # 1 million tokens
+    
+  ollama_mistral_nemo:
+    adapter: "ollama"
+    model: "mistral-nemo"
+    temperature: 0.7
+    max_tokens: 4096
+    context_window: 128000  # 128K tokens
+    
+  ollama_llama3:
+    adapter: "ollama"
+    model: "llama3:8b-instruct-fp16"
+    temperature: 0.7
+    max_tokens: 1024
+    context_window: 4096
+    
+  ollama_mistral:
+    adapter: "ollama"
+    model: "mistral-nemo:latest"
+    temperature: 0.7
+    max_tokens: 1024
+    context_window: 8192
+    
+  ollama_qwen:
+    adapter: "ollama"
+    model: "qwen2.5:14b"
+    temperature: 0.7
+    max_tokens: 2048
+    context_window: 12288
+    
+  google_gemini:
+    adapter: "litellm"  # Using LiteLLM adapter for Google
+    model: "gemini-1.5-pro"
+    temperature: 0.5
+    max_tokens: 8192
+    api_key: "${GEMINI_API_KEY}"
+    context_window: 2000000  # 2 million tokens
+    
+  default:
+    adapter: "ollama"
+    model: "llama3-gradient:1048k"
+    temperature: 0.7
+    max_tokens: 4096
+    context_window: 1000000

@@ -158,6 +158,10 @@ def main():
     # Load environment variables
     load_env_vars()
     
+    # Import and initialize LLM configurations
+    from tools.llm_handler import initialize_llm_configs
+    initialize_llm_configs("config/llms.yaml")  # Actually call the function
+    
     # Set up folder processing
     observer = setup_folder_processing(config)
     
