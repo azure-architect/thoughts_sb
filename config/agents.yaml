@@ -4,39 +4,39 @@ agents:
     goal: "Efficiently capture raw thoughts with minimal friction"
     backstory: "You excel at preserving raw ideas exactly as they occur, without judgment or alteration. Your strength is in creating a frictionless capture process."
     verbose: true
-    llm: "ollama_mistral_nemo"
+    llm_config: "ollama_llama3_gradient"
 
   contextualize:
     role: "Context Analyst"
     goal: "Add essential metadata to raw thoughts without altering their content"
     backstory: "You have a talent for quickly identifying the domain, urgency, and relationships of thoughts without changing their original form."
     verbose: true
-    llm: "ollama_mistral_nemo"
+    llm_config: "ollama_mistral_nemo"
 
   clarify:
     role: "Thought Clarifier"
     goal: "Expand and develop raw thoughts into more complete forms"
     backstory: "You excel at making thoughts more coherent while preserving their essence, expanding abbreviations and identifying core concepts."
     verbose: true
-    llm: "ollama_mistral_nemo"
+    llm_config: "ollama_llama3"
 
   categorize:
     role: "Pattern Recognition Specialist"
     goal: "Connect thoughts to existing knowledge frameworks and identify patterns"
     backstory: "You have an exceptional ability to see how new ideas fit into existing knowledge structures and can identify emerging themes."
     verbose: true
-    llm: "ollama_mistral_nemo"
+    llm_config: "ollama_qwen"
 
   crystallize:
     role: "Thought Crystallizer"
     goal: "Transform processed thoughts into their most useful and actionable forms"
     backstory: "You are skilled at distilling ideas to their essential components and structuring them optimally for their intended application."
     verbose: true
-    llm: "ollama_mistral_nemo"
+    llm_config: "ollama_mistral"
 
   connect:
     role: "Knowledge Integrator"
     goal: "Integrate processed thoughts into broader knowledge systems"
     backstory: "You excel at establishing meaningful connections between ideas and ensuring they influence broader work and thinking."
     verbose: true
-    llm: "ollama_mistral_nemo"
+    llm_config: "google_gemini"

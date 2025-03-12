@@ -57,7 +57,7 @@ def initialize_llm_configs(config_path, adapter_type="ollama"):
         # Set up a fallback configuration
         LLM_CONFIGS = {'default': {
             'adapter': 'ollama',
-            'model': 'qwen2.5:14b',
+            'model': 'mistral-nemo:latest',
             'temperature': 0.7
         }}
         

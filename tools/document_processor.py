@@ -19,11 +19,24 @@ def process_with_agent(thought_object, agent, agent_name, agent_id, prompt_templ
     # Update the current processing stage
     thought_object["processing_stage"] = agent_name.lower()
     
-    # Get the agent's LLM config name if available
-    # Get the agent's LLM config name if available
-    llm_config_name = getattr(agent, 'custom_llm_config', 
-                        getattr(agent.llm, 'llm_config_name', 'default') if hasattr(agent, 'llm') else 'default')
-        
+    # Get the agent's LLM config name with robust fallback logic
+    llm_config_name = None
+    
+    # Try different possible locations for the llm_config specification
+    if hasattr(agent, 'llm_config'):
+        llm_config_name = agent.llm_config
+    elif hasattr(agent, 'custom_llm_config'):
+        llm_config_name = agent.custom_llm_config
+    elif hasattr(agent, 'llm') and hasattr(agent.llm, 'llm_config_name'):
+        llm_config_name = agent.llm.llm_config_name
+    elif hasattr(agent, 'llm') and isinstance(agent.llm, str):
+        llm_config_name = agent.llm
+    
+    # Use default if no configuration is found
+    if not llm_config_name:
+        llm_config_name = 'default'
+        print(f"Using default LLM config for {agent_name} as no valid config found")
+    
     # Print the keys to check for case sensitivity or other issues
     print(f"All available template keys: {list(prompt_templates.keys())}")
     print(f"Agent ID: {agent_id}, Present in templates: {agent_id in prompt_templates}")
