@@ -1,0 +1,10 @@
+# use for utility definitions, etc.
+
+folders:
+  base: "/Volumes/Samsung/users/brad/Library/Mobile Documents/iCloud~md~obsidian/Documents/Digital Alchemy/"
+  capture: "_inbox"
+  contextualize: "2-Contextualize"
+  clarify: "3-Clarify"
+  categorize: "4-Categorize"
+  crystallize: "5-Crystallize"
+  connect: "6-Connect"
