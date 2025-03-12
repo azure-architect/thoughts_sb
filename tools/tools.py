@@ -111,7 +111,7 @@ def read_file(file_path):
     print(f"Read file: {file_name}")
     return thought_object
 
-def communicate_with_llm(prompt, model_name="qwen2.5:14b", temperature=0.7, max_tokens=2000):
+def communicate_with_llm(prompt, model_name="qwen2.5:14b", temperature=0.7):
     """
     Communicate with the LLM and get a response.
     

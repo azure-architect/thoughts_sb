@@ -2,13 +2,13 @@ import os
 import time
 import yaml
 from crewai import Agent, Task, Crew
-from langchain_community.llms import Ollama  # Use the recommended import path
+from langchain_community.llms import Ollama
 from tools.tools import watch_folder, read_file, process_with_agent, pass_to_next_agent, write_result, process_existing_files
 
-# Folder paths for watching and output
+# Define default paths that will be overridden by config
 CAPTURE_FOLDER = "1-Capture"
 OUTPUT_FOLDER = "6-Connect"
-CONFIG_PATH = "config/config.yaml"
+CONFIG_PATH = "config/test.yaml"
 
 # Store prompt templates globally
 PROMPT_TEMPLATES = {}
@@ -68,7 +68,7 @@ def create_agent_pipeline(agents):
     return pipeline
 
 # Define the callback function for when a new file is detected
-def process_new_thought(thought_object, agent_pipeline, prompt_templates):
+def process_new_thought(thought_object, agent_pipeline, prompt_templates, output_folder):
     """
     Process a new thought through the complete agent pipeline.
     
@@ -76,6 +76,7 @@ def process_new_thought(thought_object, agent_pipeline, prompt_templates):
         thought_object (dict): The thought object created from the captured file
         agent_pipeline (list): List of (agent, agent_name, agent_id) tuples
         prompt_templates (dict): Dictionary of prompt templates to use
+        output_folder (str): Folder to write the final output to
     """
     print(f"Starting to process thought ID: {thought_object['id']}")
     
@@ -89,13 +90,15 @@ def process_new_thought(thought_object, agent_pipeline, prompt_templates):
         current_thought = pass_to_next_agent(current_thought, agent, agent_name, agent_id, prompt_templates)
     
     # Write the final result to the output folder
-    write_result(current_thought, OUTPUT_FOLDER)
+    write_result(current_thought, output_folder)
     print(f"Completed processing thought ID: {thought_object['id']}")
 
 def main():
     print("Starting Thought Processing System...")
     
-    # Load configuration
+    global CAPTURE_FOLDER, OUTPUT_FOLDER
+    
+    # Load configuration first
     try:
         config = load_config(CONFIG_PATH)
         print("Loaded configuration from YAML")
@@ -103,14 +106,31 @@ def main():
         print(f"Error loading configuration: {e}")
         return
     
+    # Now extract folder configuration
+    folder_config = config.get('folders', {})
+    base_path = folder_config.get('base', "")
+    
+    # Update global folder paths based on loaded configuration
+    CAPTURE_FOLDER = os.path.join(base_path, folder_config.get('capture', "1-Capture"))
+    OUTPUT_FOLDER = os.path.join(base_path, folder_config.get('connect', "6-Connect"))
+    
+    print(f"Configured capture folder: {CAPTURE_FOLDER}")
+    print(f"Configured output folder: {OUTPUT_FOLDER}")
+    
+    # Ensure folders exist
+    for folder in [CAPTURE_FOLDER, OUTPUT_FOLDER]:
+        os.makedirs(folder, exist_ok=True)
+    
     # Configure Ollama LLM with parameters from config
     llm_config = config.get('llm', {})
+    model_name = llm_config.get('model_name', "llama3:8b-instruct-fp16")
+    
     llm = Ollama(
-        model="qwen2.5:14b",  # This is the exact format from your available models list
-        temperature=0.7,
+        model=model_name,
+        temperature=llm_config.get('temperature', 0.7),
         base_url="http://localhost:11434"
     )
-    print(f"Configured LLM with model: qwen2.5:14b")
+    print(f"Configured LLM with model: {model_name}")
     
     # Test LLM directly
     print("Testing LLM connection directly...")
@@ -128,22 +148,12 @@ def main():
     agent_pipeline = create_agent_pipeline(agents)
     print(f"Created agent pipeline with {len(agent_pipeline)} stages")
     
-    # Create the capture folder if it doesn't exist
-    if not os.path.exists(CAPTURE_FOLDER):
-        os.makedirs(CAPTURE_FOLDER)
-        print(f"Created capture folder: {CAPTURE_FOLDER}")
-    
-    # Create the output folder if it doesn't exist
-    if not os.path.exists(OUTPUT_FOLDER):
-        os.makedirs(OUTPUT_FOLDER)
-        print(f"Created output folder: {OUTPUT_FOLDER}")
-    
     # Debug - print the prompt templates to verify they're loaded
     print(f"Loaded prompt templates: {list(PROMPT_TEMPLATES.keys())}")
     
     # Create a callback function with access to the agent pipeline and prompt templates
     def callback(thought_object):
-        process_new_thought(thought_object, agent_pipeline, PROMPT_TEMPLATES)
+        process_new_thought(thought_object, agent_pipeline, PROMPT_TEMPLATES, OUTPUT_FOLDER)
     
     # Process existing files in the capture folder first
     processed_count = process_existing_files(CAPTURE_FOLDER, callback)
@@ -156,7 +166,8 @@ def main():
     observer = watch_folder(CAPTURE_FOLDER, callback)
     
     try:
-        print("System running. Press Ctrl+C to stop.")
+        print(f"System running. Watching {CAPTURE_FOLDER} and writing to {OUTPUT_FOLDER}")
+        print("Press Ctrl+C to stop.")
         while True:
             time.sleep(1)
     except KeyboardInterrupt:

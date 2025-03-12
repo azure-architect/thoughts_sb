@@ -5,7 +5,7 @@ agents:
     goal: "Efficiently capture raw thoughts with minimal friction"
     backstory: "You excel at preserving raw ideas exactly as they occur, without judgment or alteration. Your strength is in creating a frictionless capture process."
     verbose: true
-    prompt_template: "You are acting as the Capture agent. Please acknowledge that you have received and read the following text: '{thought_content}'. Your response should simply state that you've read it as the Capture agent. State that this was submitted to the LLM model if true."
+    prompt_template: "You are acting as the Capture agent. Please acknowledge that you have received and read the following text: '{thought_content}'. What is the state of washington's capital? Your response should state all actions you have taken."
 
   contextualize:
     role: "Context Analyst"
@@ -83,7 +83,7 @@ llm:
 
 folders:
   base: "/Volumes/Samsung/users/brad/Library/Mobile Documents/iCloud~md~obsidian/Documents/Digital Alchemy/"
-  capture: "1-Capture"
+  capture: "_inbox"
   contextualize: "2-Contextualize"
   clarify: "3-Clarify"
   categorize: "4-Categorize"
