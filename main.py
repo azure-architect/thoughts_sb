@@ -1,9 +1,12 @@
+# main.py
 import os
 import time
 import yaml
 from crewai import Agent, Task, Crew
-from langchain_community.llms import Ollama
-from tools.tools import watch_folder, read_file, process_with_agent, pass_to_next_agent, write_result, process_existing_files
+from tools.llm_handler import initialize_llm_configs, communicate_with_llm
+from tools.file_watcher import watch_folder, read_file, process_existing_files
+from tools.document_processor import process_with_agent, pass_to_next_agent
+from tools.output_writer import write_result
 
 # Define default paths that will be overridden by config
 CAPTURE_FOLDER = "1-Capture"
@@ -23,7 +26,7 @@ def load_config(config_path):
     
     return config
 
-def create_agents(config, llm):
+def create_agents(config):
     """Create agents from config."""
     global PROMPT_TEMPLATES
     
@@ -34,9 +37,14 @@ def create_agents(config, llm):
             role=agent_config['role'],
             goal=agent_config['goal'],
             backstory=agent_config['backstory'],
-            llm=llm,
             verbose=agent_config.get('verbose', True)
         )
+        
+        # Store agent's LLM config name if specified
+        if 'llm_config' in agent_config:
+            agents[agent_id].llm_config = agent_config['llm_config']
+        else:
+            agents[agent_id].llm_config = 'default'
         
         # Store the prompt template separately
         if 'prompt_template' in agent_config:
@@ -121,27 +129,11 @@ def main():
     for folder in [CAPTURE_FOLDER, OUTPUT_FOLDER]:
         os.makedirs(folder, exist_ok=True)
     
-    # Configure Ollama LLM with parameters from config
-    llm_config = config.get('llm', {})
-    model_name = llm_config.get('model_name', "llama3:8b-instruct-fp16")
-    
-    llm = Ollama(
-        model=model_name,
-        temperature=llm_config.get('temperature', 0.7),
-        base_url="http://localhost:11434"
-    )
-    print(f"Configured LLM with model: {model_name}")
-    
-    # Test LLM directly
-    print("Testing LLM connection directly...")
-    try:
-        test_response = llm.invoke("This is a test. Please reply with 'LLM is working'.")
-        print(f"LLM test response: {test_response[:50]}...")
-    except Exception as e:
-        print(f"LLM test failed: {type(e).__name__}: {str(e)}")
+    # Initialize LLM configurations
+    initialize_llm_configs(CONFIG_PATH)
     
     # Create agents from config
-    agents = create_agents(config, llm)
+    agents = create_agents(config)
     print(f"Created {len(agents)} agents")
     
     # Create the agent pipeline
@@ -152,30 +144,3 @@ def main():
     print(f"Loaded prompt templates: {list(PROMPT_TEMPLATES.keys())}")
     
     # Create a callback function with access to the agent pipeline and prompt templates
-    def callback(thought_object):
-        process_new_thought(thought_object, agent_pipeline, PROMPT_TEMPLATES, OUTPUT_FOLDER)
-    
-    # Process existing files in the capture folder first
-    processed_count = process_existing_files(CAPTURE_FOLDER, callback)
-    if processed_count > 0:
-        print(f"Processed {processed_count} existing files in {CAPTURE_FOLDER}")
-    else:
-        print(f"No existing files to process in {CAPTURE_FOLDER}")
-    
-    # Start watching the capture folder for new files
-    observer = watch_folder(CAPTURE_FOLDER, callback)
-    
-    try:
-        print(f"System running. Watching {CAPTURE_FOLDER} and writing to {OUTPUT_FOLDER}")
-        print("Press Ctrl+C to stop.")
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
-        print("System stopped by user.")
-    
-    observer.join()
-    print("System shutdown complete.")
-
-if __name__ == "__main__":
-    main()

@@ -1,3 +1,4 @@
+# document_processor.py
 import os
 import json
 import time
@@ -5,7 +6,7 @@ import logging
 from datetime import datetime
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-import litellm  # Changed from langchain_community.llms import Ollama
+import litellm
 
 def process_with_agent(thought_object, agent, agent_name, agent_id, prompt_templates):
     """Process a thought object with an agent."""
@@ -17,6 +18,9 @@ def process_with_agent(thought_object, agent, agent_name, agent_id, prompt_templ
     
     # Update the current processing stage
     thought_object["processing_stage"] = agent_name.lower()
+    
+    # Get the agent's LLM config name if available
+    llm_config_name = getattr(agent, 'llm_config', 'default')
     
     # Print the keys to check for case sensitivity or other issues
     print(f"All available template keys: {list(prompt_templates.keys())}")
@@ -34,9 +38,10 @@ def process_with_agent(thought_object, agent, agent_name, agent_id, prompt_templ
             print(f"WARNING: Template doesn't contain {{thought_content}} placeholder. Using direct replacement.")
             prompt = template.replace("{{content}}", thought_object["content"])
         
-        # Send the prompt to the LLM and get the response
-        print(f"Sending thought to LLM with {agent_name} agent...")
-        llm_response = communicate_with_llm(prompt)
+        # Send the prompt to the LLM and get the response, passing the agent's LLM config name
+        print(f"Sending thought to LLM with {agent_name} agent (using {llm_config_name} LLM config)...")
+        from .llm_handler import communicate_with_llm
+        llm_response = communicate_with_llm(prompt, llm_config_name)
         
         # Store the LLM response in the thought object
         thought_object[f"{agent_name.lower()}_results"] = llm_response
@@ -53,9 +58,10 @@ def process_with_agent(thought_object, agent, agent_name, agent_id, prompt_templ
             else:
                 prompt = template.replace("{{content}}", thought_object["content"])
             
-            # Send the prompt to the LLM and get the response
-            print(f"Sending thought to LLM with {agent_name} agent...")
-            llm_response = communicate_with_llm(prompt)
+            # Send the prompt to the LLM and get the response, passing the agent's LLM config name
+            print(f"Sending thought to LLM with {agent_name} agent (using {llm_config_name} LLM config)...")
+            from .llm_handler import communicate_with_llm
+            llm_response = communicate_with_llm(prompt, llm_config_name)
             
             # Store the LLM response in the thought object
             thought_object[f"{agent_name.lower()}_results"] = llm_response
@@ -66,8 +72,6 @@ def process_with_agent(thought_object, agent, agent_name, agent_id, prompt_templ
     
     print(f"Processed thought with {agent_name} agent")
     return thought_object
-
-
 
 def pass_to_next_agent(thought_object, next_agent, next_agent_name, next_agent_id, prompt_templates):
     """
@@ -85,6 +89,3 @@ def pass_to_next_agent(thought_object, next_agent, next_agent_name, next_agent_i
     """
     print(f"Passing thought to {next_agent_name} agent")
     return process_with_agent(thought_object, next_agent, next_agent_name, next_agent_id, prompt_templates)
-
-
-

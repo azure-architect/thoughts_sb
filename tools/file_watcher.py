@@ -7,6 +7,25 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import litellm  # Changed from langchain_community.llms import Ollama
 
+# Add this class to file_watcher.py before the other functions
+
+class CaptureHandler(FileSystemEventHandler):
+    def __init__(self, callback):
+        self.callback = callback
+        
+    def on_created(self, event):
+        # Skip directories and metadata files
+        if event.is_directory or os.path.basename(event.src_path).startswith("meta_") or os.path.basename(event.src_path).startswith("."):
+            return
+            
+        # Process the file
+        print(f"New file detected: {event.src_path}")
+        content = read_file(event.src_path)
+        if content:
+            self.callback(content)
+
+
+
 def process_existing_files(folder_path, callback):
     """
     Process existing files in the folder.

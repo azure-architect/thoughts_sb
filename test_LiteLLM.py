@@ -1,7 +1,7 @@
 # test_litellm_integration.py
 import os
 import json
-from tools.tools import communicate_with_llm
+from tools.llm_handler import communicate_with_llm  # Import from the proper module
 
 def test_integration():
     """Test the LiteLLM integration with your existing system"""
