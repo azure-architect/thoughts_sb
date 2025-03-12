@@ -20,8 +20,10 @@ def process_with_agent(thought_object, agent, agent_name, agent_id, prompt_templ
     thought_object["processing_stage"] = agent_name.lower()
     
     # Get the agent's LLM config name if available
-    llm_config_name = getattr(agent, 'llm_config', 'default')
-    
+    # Get the agent's LLM config name if available
+    llm_config_name = getattr(agent, 'custom_llm_config', 
+                        getattr(agent.llm, 'llm_config_name', 'default') if hasattr(agent, 'llm') else 'default')
+        
     # Print the keys to check for case sensitivity or other issues
     print(f"All available template keys: {list(prompt_templates.keys())}")
     print(f"Agent ID: {agent_id}, Present in templates: {agent_id in prompt_templates}")

@@ -1,146 +1,182 @@
 # main.py
 import os
-import time
+import sys
 import yaml
-from crewai import Agent, Task, Crew
-from tools.llm_handler import initialize_llm_configs, communicate_with_llm
-from tools.file_watcher import watch_folder, read_file, process_existing_files
-from tools.document_processor import process_with_agent, pass_to_next_agent
-from tools.output_writer import write_result
+import argparse
+from typing import Dict, Any, Optional, List
 
-# Define default paths that will be overridden by config
-CAPTURE_FOLDER = "1-Capture"
-OUTPUT_FOLDER = "6-Connect"
-CONFIG_PATH = "config/test.yaml"
+# Add the project root to the Python path if needed
+project_root = os.path.dirname(os.path.abspath(__file__))
+if project_root not in sys.path:
+    sys.path.append(project_root)
 
-# Store prompt templates globally
-PROMPT_TEMPLATES = {}
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    print("Warning: python-dotenv is not installed. Environment variables from .env file won't be loaded.")
+    print("Install with: pip install python-dotenv")
+    def load_dotenv(*args, **kwargs):
+        pass
 
-def load_config(config_path):
-    """Load agent and task configurations from YAML file."""
-    if not os.path.exists(config_path):
-        raise FileNotFoundError(f"Config file not found: {config_path}")
+from adapters import create_adapter
+
+def load_env_vars(env_path: str = None):
+    """Load environment variables from .env file."""
+    if env_path is None:
+        # Try to find .env in the project root
+        env_path = os.path.join(project_root, '.env')
     
-    with open(config_path, 'r') as file:
-        config = yaml.safe_load(file)
+    # Load environment variables from .env file
+    load_dotenv(env_path)
     
-    return config
+    # Check for OLLAMA_BASE_URL
+    if not os.getenv("OLLAMA_BASE_URL"):
+        os.environ["OLLAMA_BASE_URL"] = "http://localhost:11434"
 
-def create_agents(config):
-    """Create agents from config."""
-    global PROMPT_TEMPLATES
+def load_config(config_path: str) -> Dict[str, Any]:
+    """Load configuration from YAML file."""
+    try:
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+            return config
+    except FileNotFoundError:
+        print(f"Config file not found: {config_path}")
+        return {}
+    except yaml.YAMLError as e:
+        print(f"Error parsing YAML file {config_path}: {e}")
+        return {}
+
+def load_configs(agents_path: str = "config/agents.yaml", 
+                llm_path: str = "config/llm_configs.yaml") -> Dict[str, Any]:
+    """Load and merge multiple configuration files."""
+    agents_config = load_config(agents_path)
+    llm_configs = load_config(llm_path)
     
-    agents = {}
-    for agent_id, agent_config in config['agents'].items():
-        # Create the agent without the prompt template
-        agents[agent_id] = Agent(
-            role=agent_config['role'],
-            goal=agent_config['goal'],
-            backstory=agent_config['backstory'],
-            verbose=agent_config.get('verbose', True)
+    # Create a merged config
+    merged_config = {
+        "agents": agents_config.get("agents", {}),
+        "folders": agents_config.get("folders", {}),
+        "llm_configs": llm_configs
+    }
+    
+    return merged_config
+
+def get_llm_config(config: Dict[str, Any], llm_name: str) -> Dict[str, Any]:
+    """Get LLM configuration by name."""
+    llm_configs = config.get("llm_configs", {})
+    llm_config = llm_configs.get(llm_name, llm_configs.get("default", {}))
+    
+    if not llm_config:
+        print(f"Warning: LLM config '{llm_name}' not found, using default config")
+        
+    return llm_config
+
+def process_thought(thought_content: str, agent_name: str, config: Dict[str, Any]) -> str:
+    """Process a thought using the specified agent and its LLM configuration."""
+    # Get agent config
+    agents_config = config.get("agents", {})
+    agent_config = agents_config.get(agent_name, {})
+    
+    if not agent_config:
+        return f"Error: Agent '{agent_name}' not found in configuration."
+    
+    # Get LLM config for this agent
+    llm_name = agent_config.get("llm", "default")
+    llm_config = get_llm_config(config, llm_name)
+    
+    # Create adapter from LLM config
+    adapter_type = llm_config.get("adapter", "ollama")
+    adapter = create_adapter(adapter_type)
+    adapter.initialize(llm_config)
+    
+    try:
+        # Get the agent's prompt template and format it with the thought content
+        prompt_template = agent_config.get("prompt_template", "")
+        prompt = prompt_template.format(thought_content=thought_content)
+        
+        is_verbose = agent_config.get("verbose", False)
+        if is_verbose:
+            print(f"\nPrompt for {agent_name}:")
+            print("-" * 50)
+            print(prompt)
+            print("-" * 50)
+        
+        # Generate response using the adapter
+        response = adapter.generate(
+            prompt=prompt,
+            temperature=llm_config.get("temperature", 0.7),
+            max_tokens=llm_config.get("max_tokens", 1000)
         )
         
-        # Store agent's LLM config name if specified
-        if 'llm_config' in agent_config:
-            agents[agent_id].llm_config = agent_config['llm_config']
-        else:
-            agents[agent_id].llm_config = 'default'
+        return response
+    except Exception as e:
+        print(f"Error processing thought with {agent_name} agent: {str(e)}")
+        return f"Error: {str(e)}"
+    finally:
+        adapter.close()
+
+def process_thought_pipeline(initial_thought: str, config: Dict[str, Any], 
+                           agents: Optional[List[str]] = None) -> Dict[str, str]:
+    """Process a thought through multiple agents and return results."""
+    if agents is None:
+        agents = ["capture", "contextualize", "clarify", "categorize", "crystallize", "connect"]
+    
+    results = {}
+    current_thought = initial_thought
+    
+    for agent_name in agents:
+        print(f"\n== Processing with {agent_name.upper()} agent ==")
+        result = process_thought(current_thought, agent_name, config)
+        results[agent_name] = result
         
-        # Store the prompt template separately
-        if 'prompt_template' in agent_config:
-            PROMPT_TEMPLATES[agent_id] = agent_config['prompt_template']
-            print(f"Loaded prompt template for {agent_id}, length: {len(agent_config['prompt_template'])}")
-        else:
-            PROMPT_TEMPLATES[agent_id] = f"Process this thought as {agent_config['role']}: {{thought_content}}"
-            print(f"Created default prompt template for {agent_id}")
+        print(f"Result from {agent_name}:")
+        print("-" * 50)
+        print(result)
+        print("-" * 50)
+        
+        # Use this result as input to the next agent
+        current_thought = result
     
-    return agents
+    return results
 
-def create_agent_pipeline(agents):
-    """Create a pipeline of agents in the correct order."""
-    # The order of processing stages
-    stages = ["capture", "contextualize", "clarify", "categorize", "crystallize", "connect"]
+def interactive_mode(config: Dict[str, Any]):
+    """Run in interactive mode, allowing the user to enter thoughts."""
+    print("\n=== Thought Processing System (Interactive Mode) ===")
+    print("Enter your thoughts, or type 'exit' to quit.")
     
-    # Print the keys available in the agents dictionary
-    print(f"Agent keys: {list(agents.keys())}")
-    
-    # Create the pipeline of (agent, agent_name, agent_id) tuples
-    pipeline = []
-    for stage in stages:
-        if stage in agents:
-            # Title case the stage name for display
-            stage_name = stage.title()
-            pipeline.append((agents[stage], stage_name, stage))  # Using the same case as in config
-    
-    print(f"Agent pipeline stages: {[p[2] for p in pipeline]}")
-    return pipeline
-
-# Define the callback function for when a new file is detected
-def process_new_thought(thought_object, agent_pipeline, prompt_templates, output_folder):
-    """
-    Process a new thought through the complete agent pipeline.
-    
-    Args:
-        thought_object (dict): The thought object created from the captured file
-        agent_pipeline (list): List of (agent, agent_name, agent_id) tuples
-        prompt_templates (dict): Dictionary of prompt templates to use
-        output_folder (str): Folder to write the final output to
-    """
-    print(f"Starting to process thought ID: {thought_object['id']}")
-    
-    # Initialize with the first agent
-    current_thought = process_with_agent(thought_object, agent_pipeline[0][0], 
-                                         agent_pipeline[0][1], agent_pipeline[0][2], 
-                                         prompt_templates)
-    
-    # Pass through the rest of the pipeline
-    for agent, agent_name, agent_id in agent_pipeline[1:]:
-        current_thought = pass_to_next_agent(current_thought, agent, agent_name, agent_id, prompt_templates)
-    
-    # Write the final result to the output folder
-    write_result(current_thought, output_folder)
-    print(f"Completed processing thought ID: {thought_object['id']}")
+    while True:
+        thought = input("\nEnter a thought: ")
+        if thought.lower() in ('exit', 'quit', 'q'):
+            break
+        
+        process_thought_pipeline(thought, config)
 
 def main():
-    print("Starting Thought Processing System...")
+    parser = argparse.ArgumentParser(description="Thought Processing System")
+    parser.add_argument("--thought", type=str, help="Thought to process")
+    parser.add_argument("--agents", type=str, help="Comma-separated list of agents to use")
+    parser.add_argument("--agents-config", type=str, default="config/agents.yaml", 
+                        help="Path to agents configuration file")
+    parser.add_argument("--llm-config", type=str, default="config/llm_configs.yaml",
+                        help="Path to LLM configuration file")
+    parser.add_argument("--interactive", action="store_true", help="Run in interactive mode")
+    parser.add_argument("--env", type=str, help="Path to .env file")
     
-    global CAPTURE_FOLDER, OUTPUT_FOLDER
+    args = parser.parse_args()
     
-    # Load configuration first
-    try:
-        config = load_config(CONFIG_PATH)
-        print("Loaded configuration from YAML")
-    except Exception as e:
-        print(f"Error loading configuration: {e}")
-        return
+    # Load environment variables
+    load_env_vars(args.env)
     
-    # Now extract folder configuration
-    folder_config = config.get('folders', {})
-    base_path = folder_config.get('base', "")
+    # Load configuration
+    config = load_configs(args.agents_config, args.llm_config)
     
-    # Update global folder paths based on loaded configuration
-    CAPTURE_FOLDER = os.path.join(base_path, folder_config.get('capture', "1-Capture"))
-    OUTPUT_FOLDER = os.path.join(base_path, folder_config.get('connect', "6-Connect"))
-    
-    print(f"Configured capture folder: {CAPTURE_FOLDER}")
-    print(f"Configured output folder: {OUTPUT_FOLDER}")
-    
-    # Ensure folders exist
-    for folder in [CAPTURE_FOLDER, OUTPUT_FOLDER]:
-        os.makedirs(folder, exist_ok=True)
-    
-    # Initialize LLM configurations
-    initialize_llm_configs(CONFIG_PATH)
-    
-    # Create agents from config
-    agents = create_agents(config)
-    print(f"Created {len(agents)} agents")
-    
-    # Create the agent pipeline
-    agent_pipeline = create_agent_pipeline(agents)
-    print(f"Created agent pipeline with {len(agent_pipeline)} stages")
-    
-    # Debug - print the prompt templates to verify they're loaded
-    print(f"Loaded prompt templates: {list(PROMPT_TEMPLATES.keys())}")
-    
-    # Create a callback function with access to the agent pipeline and prompt templates
+    if args.interactive:
+        interactive_mode(config)
+    elif args.thought:
+        agents = args.agents.split(",") if args.agents else None
+        process_thought_pipeline(args.thought, config, agents)
+    else:
+        parser.print_help()
+
+if __name__ == "__main__":
+    main()

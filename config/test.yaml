@@ -47,66 +47,6 @@ agents:
     llm: "ollama_mistral_nemo"
     prompt_template: "You are acting as the Connect agent. Your role is to integrate this processed thought into broader knowledge systems. Please: 1) Identify potential connections to other thoughts or knowledge areas, 2) Suggest implications across different projects or domains, 3) Recommend next steps or areas for exploration, and 4) Create bidirectional relationships between this and related thoughts. Thought content: '{thought_content}'. Provide your connection analysis and recommendations."
 
-llm_configs:
-  ollama_llama3_gradient:
-    provider: "ollama"
-    model: "llama3-gradient"
-    temperature: 0.7
-    max_tokens: 4096
-    base_url: "${OLLAMA_BASE_URL}"
-    context_window: 1000000  # 1 million tokens
-    
-  ollama_mistral_nemo:
-    provider: "ollama"
-    model: "mistral-nemo"
-    temperature: 0.7
-    max_tokens: 4096
-    base_url: "${OLLAMA_BASE_URL}"
-    context_window: 128000  # 128K tokens
-    
-  ollama_llama3:
-    provider: "ollama"
-    model: "llama3:8b-instruct-fp16"
-    temperature: 0.7
-    max_tokens: 1024
-    base_url: "${OLLAMA_BASE_URL}"
-    context_window: 4096
-    
-  ollama_mistral:
-    provider: "ollama"
-    model: "mistral-uncensored:latest"
-    temperature: 0.7
-    max_tokens: 1024
-    base_url: "${OLLAMA_BASE_URL}"
-    context_window: 8192
-    
-  ollama_qwen:
-    provider: "ollama"
-    model: "qwen2.5:14b"
-    temperature: 0.7
-    max_tokens: 2048
-    base_url: "${OLLAMA_BASE_URL}"
-    context_window: 12288
-    
-  google_gemini:
-    provider: "google"
-    model: "gemini-1.5-pro"
-    temperature: 0.5
-    max_tokens: 8192
-    api_key: "${GOOGLE_API_KEY}"
-    context_window: 2000000  # 2 million tokens
-    
-  default:
-    provider: "ollama"
-    model: "llama3-gradient"  # Keep gradient as default
-    temperature: 0.7
-    max_tokens: 4096
-    base_url: "${OLLAMA_BASE_URL}"
-    context_window: 1000000
-  
-  
-  
-
 
 folders:
   base: "/Volumes/Samsung/users/brad/Library/Mobile Documents/iCloud~md~obsidian/Documents/Digital Alchemy/"
