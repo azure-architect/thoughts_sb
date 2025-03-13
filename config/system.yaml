@@ -1,8 +1,10 @@
 # use for utility definitions, etc.
+# Template system.yaml
+# Basic system configuration for folder paths
 
 folders:
-  base: "/Volumes/Samsung/users/brad/Library/Mobile Documents/iCloud~md~obsidian/Documents/Digital Alchemy/"
-  capture: "_inbox"
+  base: "./data"  # Base path for all thought processing folders
+  capture: "1-Capture"
   contextualize: "2-Contextualize"
   clarify: "3-Clarify"
   categorize: "4-Categorize"
