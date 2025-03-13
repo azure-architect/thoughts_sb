@@ -1,3 +1,4 @@
+# tools/llm_handler.py
 import os
 import json
 import yaml
@@ -70,7 +71,7 @@ def initialize_llm_configs(config_path, adapter_type="ollama"):
 
 def communicate_with_llm(prompt, config_name='default'):
     """
-    Communicate with the LLM and get a response using the configured adapter.
+    Communicate with the LLM and get a response using the specified configuration.
     
     Args:
         prompt (str): The prompt to send to the LLM.
@@ -79,7 +80,7 @@ def communicate_with_llm(prompt, config_name='default'):
     Returns:
         str: The response from the LLM.
     """
-    global llm_adapter
+    global llm_adapter, LLM_CONFIGS
     
     print("========= COMMUNICATE WITH LLM FUNCTION CALLED =========")
     
@@ -88,9 +89,20 @@ def communicate_with_llm(prompt, config_name='default'):
         logger.error("LLM adapter not initialized")
         return "ERROR: LLM adapter not initialized"
     
+    # Get the configuration for the specified model
+    config = LLM_CONFIGS.get(config_name, LLM_CONFIGS.get('default'))
+    if not config:
+        logger.error(f"No configuration found for '{config_name}' and no default available")
+        return f"ERROR: No configuration found for '{config_name}'"
+    
+    logger.info(f"Using LLM config: {config_name} - Model: {config.get('model', 'unknown')}")
+    
     try:
+        # Set the adapter configuration for this request
+        llm_adapter.set_config(config)
+        
         # Use the adapter to get a response
-        response = llm_adapter.generate(prompt)  # Use generate instead of complete
+        response = llm_adapter.generate(prompt)
         print(f"Received response from LLM, length: {len(response)}")
         return response
     except Exception as e:

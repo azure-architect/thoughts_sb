@@ -1,4 +1,4 @@
-# adapters/base.py
+# adapters/base_adapter.py
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List
 
@@ -8,6 +8,11 @@ class LLMAdapter(ABC):
     @abstractmethod
     def initialize(self, config: Dict[str, Any]) -> None:
         """Initialize the adapter with configuration."""
+        pass
+    
+    @abstractmethod
+    def set_config(self, config: Dict[str, Any]) -> None:
+        """Update the adapter configuration."""
         pass
     
     @abstractmethod
