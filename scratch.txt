@@ -1,0 +1,135 @@
+# YouTube Transcript Analysis Prompt
+
+## Purpose
+Extract maximum value from YouTube video transcripts by analyzing content, identifying key insights, unique methodologies, and transformational lessons.
+
+## Input
+You will be given a YouTube video transcript, often with timestamps, and optionally a URL to the video.
+
+## Instructions
+Analyze the provided transcript to extract both structured metadata and substantive content. Your goal is to identify valuable knowledge, techniques, and insights that represent the core value of the video.
+
+1. First, thoroughly understand the core teaching, method, or framework presented
+2. Extract unique methodologies, mental models, and non-obvious insights
+3. Identify specific "aha moments" and perspective-shifting lessons
+4. Create a logical breakdown of any processes or frameworks described
+5. Complete ALL sections with specific, actionable details that capture the essence of what makes this content valuable
+6. Output the entire analysis in a properly formatted markdown code block
+
+## Output Format
+Your response should be a single markdown code block containing the following sections:
+
+---
+id: [YYYYMMDDHHMMSS format using current date]
+name: [lowercase_video_title_with_underscores]
+aliases: [Original Video Title]
+content_type: YouTube Video
+created: [YYYY-MM-DD current date]
+modified: [YYYY-MM-DD current date]
+status: triage
+domains: [List 2-4 relevant domains]
+tags:
+  - [[tag1]]
+  - [[tag2]]
+  - [[tag3]]
+  - [[tag4]]
+  - [[tag5]]
+priority: [1-5, where 1 is highest priority]
+quadrant:
+  position: [Q1, Q2, Q3, Q4 based on urgency and importance]
+  x_axis_value: [1-10 value representing importance] 
+  y_axis_value: [1-10 value representing urgency]
+actionability: [High/Medium/Low]
+implementation_effort: [High/Medium/Low]
+unique_value: [High/Medium/Low]
+tools_mentioned: [List specific tools mentioned]
+tech_stack: [List relevant technologies]
+keywords: [List 5-7 specific terms relevant to content]
+vector_keywords: [List 3-5 specialized terms for vector search]
+target_audience: [Description of who would benefit most]
+timestamps:
+  - [[00:00]] Introduction
+  - [[MM:SS]] Key Point 1
+  - [[MM:SS]] Key Point 2
+  - [[MM:SS]] Additional key points with timestamps
+video_url: [URL if provided]
+next_steps: [List 1-3 clear action items to implement from this content]
+---
+
+# [Video Title]
+
+## Core Value Proposition
+[1-2 paragraphs that articulate exactly what makes this video valuable and what problems it solves. Focus on the unique angle, approach, or insight that makes this content worth saving.]
+
+## Key Insights & Lessons
+1. **[Primary Insight/Lesson]**: [Clear explanation of a non-obvious insight, perspective shift, or mental model introduced]
+2. **[Secondary Insight/Lesson]**: [Another valuable perspective or understanding gained]
+3. **[Additional Insights]**: [Focus on non-obvious, transformational lessons]
+
+## Unique Methodology/Framework
+[Detailed explanation of any unique system, framework, or approach presented in the video. This should clearly articulate what makes this method different from standard approaches.]
+
+## Process Breakdown
+1. **[Step 1]**: [Detailed explanation] ([[MM:SS]])
+   - Key consideration: [Important nuance or detail]
+   - Common mistake: [What people typically get wrong]
+   
+2. **[Step 2]**: [Detailed explanation] ([[MM:SS]])
+   - Key consideration: [Important nuance or detail]
+   - Common mistake: [What people typically get wrong]
+
+3. **[Additional steps as needed]**
+
+## Implementation Strategy
+### Prerequisites
+- [Required knowledge, tools, or resources]
+- [Additional prerequisites]
+
+### Execution Plan
+1. [First action to implement this knowledge]
+2. [Second action to implement this knowledge]
+3. [Additional actions as needed]
+
+### Potential Challenges
+- [Challenge 1]: [How to overcome]
+- [Challenge 2]: [How to overcome]
+
+## Tools & Resources Analysis
+### Primary Tool: [Main Tool Name]
+- **Purpose**: [What problem it solves]
+- **Unique Advantage**: [Why this tool specifically]
+- **Setup/Access**: [How to get/use it]
+- **Alternatives**: [Similar tools that could work]
+
+### Secondary Tools
+- **[Tool Name]**: [Specific purpose and advantage]
+- **[Additional tools as relevant]**
+
+## "Aha!" Moments
+> "[Direct quote or paraphrase of a particularly insightful moment]" ([[MM:SS]])
+> Significance: [Why this insight is transformative]
+
+> "[Additional quotes as applicable]"
+
+## Content Quality Assessment
+- **Depth**: [Superficial/Moderate/Deep]
+- **Originality**: [Derivative/Somewhat Novel/Highly Original]
+- **Evidence Quality**: [Anecdotal/Mixed/Well-Researched]
+- **Practical Application**: [Theoretical/Somewhat Applicable/Immediately Applicable]
+
+## Action Items
+- [ ] [Specific action to implement knowledge from this video]
+- [ ] [Additional actions as needed]
+
+## Related Content
+- [Similar content that complements this video]
+- [Additional related resources]
+
+## Analysis Guidelines
+When analyzing the transcript, prioritize:
+
+1. **Substance over structure**: Ensure you've captured what makes this content uniquely valuable
+2. **Transformative insights**: Identify perspective shifts and "aha" moments that change understanding
+3. **Unique methodologies**: Focus on approaches that differ from standard methods
+4. **Practical application**: Provide clear implementation steps that preserve the nuance of the original content
+5. **Non-obvious lessons**: Highlight insights that wouldn't be apparent from a simple summary 
