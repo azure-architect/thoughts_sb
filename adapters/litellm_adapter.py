@@ -11,6 +11,7 @@ class LiteLLMAdapter(LLMAdapter):
         self.model = None
         self.temperature = 0.7
         self.max_tokens = 1000
+        self.api_key = None
         
     def initialize(self, config: Dict[str, Any]) -> None:
         """Initialize the LiteLLM adapter with configuration."""
@@ -19,19 +20,34 @@ class LiteLLMAdapter(LLMAdapter):
         self.max_tokens = config.get("max_tokens", 1000)
         
         # Handle API keys from config
+        self.api_key = config.get("api_key")
+        if self.api_key:
+            self._set_api_key(self.model, self.api_key)
+    
+    def set_config(self, config: Dict[str, Any]) -> None:
+        """Update the adapter configuration."""
+        self.model = config.get("model", self.model)
+        self.temperature = config.get("temperature", self.temperature)
+        self.max_tokens = config.get("max_tokens", self.max_tokens)
+        
+        # Update API key if provided
         api_key = config.get("api_key")
-        if api_key:
-            # Set the appropriate environment variable for the model type
-            model_prefix = self.model.split("-")[0].lower()
-            if "gemini" in model_prefix:
-                os.environ["GOOGLE_API_KEY"] = api_key
-            elif "gpt" in model_prefix or "openai" in model_prefix:
-                os.environ["OPENAI_API_KEY"] = api_key
-            elif "claude" in model_prefix:
-                os.environ["ANTHROPIC_API_KEY"] = api_key
-            else:
-                # Generic fallback
-                litellm.api_key = api_key
+        if api_key and api_key != self.api_key:
+            self.api_key = api_key
+            self._set_api_key(self.model, self.api_key)
+    
+    def _set_api_key(self, model, api_key):
+        """Helper to set the appropriate API key."""
+        model_prefix = model.split("-")[0].lower()
+        if "gemini" in model_prefix:
+            os.environ["GOOGLE_API_KEY"] = api_key
+        elif "gpt" in model_prefix or "openai" in model_prefix:
+            os.environ["OPENAI_API_KEY"] = api_key
+        elif "claude" in model_prefix:
+            os.environ["ANTHROPIC_API_KEY"] = api_key
+        else:
+            # Generic fallback
+            litellm.api_key = api_key
         
     def generate(self, 
                 prompt: str, 

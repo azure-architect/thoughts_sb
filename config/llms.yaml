@@ -1,50 +1,48 @@
+# Template llms.yaml
+# This file defines the language model configurations available to your agents
+# Add or modify configurations based on available models and your requirements
+
 llm_configs:
-  ollama_llama3_gradient:
+  # Fast, efficient model for simple tasks
+  default_model_fast:
     adapter: "ollama"
-    model: "llama3-gradient:1048k"
-    temperature: 0.7
-    max_tokens: 4096
-    context_window: 1000000  # 1 million tokens
-    
-  ollama_mistral_nemo:
-    adapter: "ollama"
-    model: "mistral-nemo"
-    temperature: 0.7
-    max_tokens: 4096
-    context_window: 128000  # 128K tokens
-    
-  ollama_llama3:
-    adapter: "ollama"
-    model: "llama3:8b-instruct-fp16"
-    temperature: 0.7
-    max_tokens: 1024
-    context_window: 4096
-    
-  ollama_mistral:
-    adapter: "ollama"
-    model: "mistral-nemo:latest"
-    temperature: 0.7
-    max_tokens: 1024
-    context_window: 8192
-    
-  ollama_qwen:
-    adapter: "ollama"
-    model: "qwen2.5:14b"
+    model: "llama3:8b"
     temperature: 0.7
     max_tokens: 2048
-    context_window: 12288
+    context_window: 4096
     
-  google_gemini:
-    adapter: "litellm"  # Using LiteLLM adapter for Google
-    model: "gemini-1.5-pro"
-    temperature: 0.5
-    max_tokens: 8192
-    api_key: "${GEMINI_API_KEY}"
-    context_window: 2000000  # 2 million tokens
-    
-  default:
+  # Balanced model for most tasks
+  default_model_balanced:
     adapter: "ollama"
-    model: "llama3-gradient:1048k"
+    model: "llama3:8b"  # Changed from mistral:7b
     temperature: 0.7
     max_tokens: 4096
-    context_window: 1000000
+    context_window: 8192
+    
+  # Comprehensive model for complex reasoning
+  default_model_comprehensive:
+    adapter: "ollama"
+    model: "llama3:8b"  # Changed from llama3:70b
+    temperature: 0.5
+    max_tokens: 8192
+    context_window: 16384
+    
+  # Example of an API-based model configuration
+  api_model_example:
+    adapter: "litellm"  # Using LiteLLM adapter
+    model: "gpt-4"
+    temperature: 0.5
+    max_tokens: 8192
+    api_key: "${API_KEY_ENV_VAR}"
+    context_window: 128000
+    
+  # The default model used when no specific model is specified
+  default:
+    adapter: "ollama"
+    model: "llama3:8b"
+    temperature: 0.7
+    max_tokens: 4096
+    context_window: 8192
+
+# Add additional model configurations as needed
+# Use environment variables for API keys with ${ENV_VAR_NAME} syntax

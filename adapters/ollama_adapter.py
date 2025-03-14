@@ -24,6 +24,17 @@ class OllamaAdapter(LLMAdapter):
         
         # Create client with appropriate base URL
         self.client = ollama.Client(host=base_url)
+    
+    def set_config(self, config: Dict[str, Any]) -> None:
+        """Update the adapter configuration."""
+        self.model = config.get("model", self.model)
+        self.temperature = config.get("temperature", self.temperature)
+        self.max_tokens = config.get("max_tokens", self.max_tokens)
+        
+        # Update base URL if provided
+        base_url = config.get("base_url", os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"))
+        if hasattr(self.client, 'host') and base_url != self.client.host:
+            self.client = ollama.Client(host=base_url)
         
     def generate(self, 
                 prompt: str, 

@@ -119,7 +119,7 @@ def process_thought(thought_object, config):
         agent.role = agent_config.get("role", "")
         agent.goal = agent_config.get("goal", "")
         agent.backstory = agent_config.get("backstory", "")
-        agent.llm_config = agent_config.get("llm", "default")
+        agent.llm_config = agent_config.get("llm_config", "default")
         agents[agent_id] = agent
     
     # Process the thought through each stage
